@@ -18,6 +18,7 @@ func (r *router) RouterInit(router *gin.Engine) {
 		GET("/api/getIP", Ipaddr.GetClusterIP).
 		POST("/api/upload", File.UploadFile).
 		POST("/api/login", Login.Login).
+		GET("/api/authformula", Login.GetAuthCode).
 		GET("/api/corev1/getnamespaces", Namespace.GetNamespaces).
 		GET("/api/corev1/getpods", Pod.GetPods).
 		GET("/api/corev1/getnodes", Node.GetNodes).

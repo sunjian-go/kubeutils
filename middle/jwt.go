@@ -27,7 +27,7 @@ func JWTAuth() gin.HandlerFunc {
 			strings.Contains(c.Request.URL.String(), "register") ||
 			strings.Contains(c.Request.URL.String(), "keepalive") ||
 			strings.Contains(c.Request.URL.String(), "upload") ||
-			strings.Contains(c.Request.URL.String(), "importfile") ||
+			strings.Contains(c.Request.URL.String(), "authformula") ||
 			strings.Contains(c.Request.URL.String(), "ws") {
 			c.Next()
 		} else {

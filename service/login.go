@@ -16,21 +16,30 @@ type login struct {
 type User struct {
 	Username string `json:"username"`
 	Password string `json:"password"`
+	Formula  string `json:"formula"`
+	Result   string `json:"result"`
 }
 
 func (l *login) Login(adminuser *User) (string, map[string]string, error) {
+	//首先验证码校验
+	err := Auth.CountResult(adminuser.Formula, adminuser.Result)
+	if err != nil {
+		fmt.Println(err.Error())
+		return "", nil, err
+	}
+	//校验账密
 	gconf, err := Conf.ReadConfFunc()
 	if err != nil {
 		return "", nil, err
 	}
 	if adminuser.Username != "" && adminuser.Password != "" {
 		if adminuser.Username != gconf["AdminUser"] || adminuser.Password != gconf["AdminPasswd"] {
-			logger.Error("username or password is wrong...")
-			return "", nil, errors.New("username or password is wrong")
+			logger.Error("账号或密码错误，请重试")
+			return "", nil, errors.New("账号或密码错误，请重试")
 		}
 	} else {
-		logger.Error("username or password not is null...")
-		return "", nil, errors.New("username or password not is null")
+		logger.Error("账号或密码不能为空")
+		return "", nil, errors.New("账号或密码不能为空")
 	}
 
 	//验证账密通过后，生成token

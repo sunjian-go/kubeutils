@@ -37,3 +37,13 @@ func (l *login) Login(c *gin.Context) {
 		"port":  kubeconf["port"],
 	})
 }
+
+// 获取验证公式
+func (l *login) GetAuthCode(c *gin.Context) {
+	//获取验证公式
+	formula := service.Auth.GetAuthCode()
+	c.JSON(200, gin.H{
+		"msg":  "获取验证码成功",
+		"data": formula,
+	})
+}
