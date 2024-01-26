@@ -193,8 +193,8 @@ func (f *file) CopyFromPod(podinfo *QueryStr, cont *gin.Context, clusterName str
 	fmt.Println("发送：", req)
 
 	// 发送 HTTP 请求
-	var resp *http.Response
 	// 创建 HTTP 客户端
+	var resp *http.Response
 	client := &http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {
