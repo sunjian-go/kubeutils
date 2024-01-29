@@ -29,6 +29,9 @@ func (r *router) RouterInit(router *gin.Engine) {
 		GET("/api/importfile", Imfile.ImportFile).
 		POST("/api/startPacket", Pack.StartPacket).
 		POST("/api/stopPacket", Pack.StopPacket).
+		POST("/api/icmp", Icmp.PingFunc).
+		POST("/api/port", Port.PortTel).
+		GET("/api/nodes", Node.GetNodes).
 		//ws获取日志
 		GET("/api/ws", Pod.WsFunc)
 }

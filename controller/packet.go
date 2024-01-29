@@ -23,15 +23,21 @@ func (p *packet) StartPacket(c *gin.Context) {
 		return
 	}
 	fmt.Println("需要抓包的数据为：", packinfo)
-	err := service.Pack.StartPacket(packinfo, clusterName, url)
+	info, err := service.Pack.StartPacket(packinfo, clusterName, url)
 	if err != nil {
-		c.JSON(400, gin.H{
-			"err": err.Error(),
-		})
+		if err.Error() == "err" {
+			c.JSON(400, gin.H{
+				"err": info,
+			})
+		} else {
+			c.JSON(400, gin.H{
+				"err": err.Error(),
+			})
+		}
 		return
 	}
 	c.JSON(200, gin.H{
-		"msg": "启动抓包程序成功",
+		"msg": info,
 	})
 }
 
@@ -45,7 +51,24 @@ func (p *packet) StopPacket(c *gin.Context) {
 		})
 		return
 	}
-	c.JSON(200, gin.H{
-		"msg": "关闭抓包程序成功",
-	})
+}
+
+// 获取所有网卡信息
+func (p *packet) GetAllInterface(c *gin.Context) {
+	url := c.Query("url")
+	clusterName := c.Query("clusterName")
+	interfaces, err := service.Pack.GetAllInterface(c, clusterName, url)
+	if err != nil {
+		if err.Error() == "err" {
+			c.JSON(400, gin.H{
+				"err": interfaces,
+			})
+		} else {
+			c.JSON(400, gin.H{
+				"err": err.Error(),
+			})
+		}
+	}
+	c.JSON(200, interfaces)
+
 }

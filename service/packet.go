@@ -1,13 +1,14 @@
 package service
 
 import (
-	"bytes"
 	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/wonderivan/logger"
 	"io"
 	"main/dao"
+	"main/utils"
 	"net/http"
 	"strings"
 )
@@ -24,29 +25,27 @@ type PackInfo struct {
 }
 
 // 开始抓包
-func (p *packet) StartPacket(pcakinfo *PackInfo, clusterName, url string) error {
+func (p *packet) StartPacket(pcakinfo *PackInfo, clusterName, url string) (interface{}, error) {
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
 		fmt.Println(err.Error())
-		return err
+		return nil, err
 	}
 
 	// 将结构体编码为 JSON
-	packData, err := json.Marshal(pcakinfo)
+	//将结构体转为json格式
+	jsonReader, err := utils.Stj.StructToJson(pcakinfo)
 	if err != nil {
-		fmt.Println("编码结构体为 JSON 时出错：" + err.Error())
-		return errors.New("编码结构体为 JSON 时出错：" + err.Error())
+		logger.Error(err.Error())
+		return nil, err
 	}
-
-	// 创建一个包含 JSON 数据的 io.Reader
-	jsonReader := bytes.NewBuffer(packData)
 	//创建http请求
 	urls := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/startPacket?url=" + url //去往agent
 	req, err := http.NewRequest("POST", urls, jsonReader)                           //后端需要用ShouldBindJSON来接收参数
 	if err != nil {
 		fmt.Println("创建 HTTP 请求报错：" + err.Error())
-		return errors.New("创建 HTTP 请求报错：" + err.Error())
+		return nil, errors.New("创建 HTTP 请求报错：" + err.Error())
 	}
 
 	fmt.Println("发送：", req)
@@ -58,18 +57,31 @@ func (p *packet) StartPacket(pcakinfo *PackInfo, clusterName, url string) error 
 	resp, err = client.Do(req)
 	if err != nil {
 		fmt.Println("发送 HTTP 请求报错：" + err.Error())
-		return errors.New("发送 HTTP 请求报错：" + err.Error())
+		return nil, errors.New("发送 HTTP 请求报错：" + err.Error())
 	}
 	defer resp.Body.Close()
 
 	fmt.Println("状态信息：", resp.Status)
-	if resp.StatusCode != 200 {
-		if resp.StatusCode == 442 {
-			return errors.New("当前已有抓包程序运行，请稍后重试")
-		}
-		return errors.New("启动抓包程序失败，请检查抓包程序")
+
+	// 读取响应的 body 内容
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("读取响应 body 时出错:" + err.Error())
+		return nil, errors.New("读取响应 body 时出错:" + err.Error())
 	}
-	return nil
+	// 解析 body 内容为 JSON 格式
+	var data map[string]interface{}
+	//解码到data中
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		logger.Error("解析 JSON 数据时出错:" + err.Error())
+		return nil, errors.New("解析 JSON 数据时出错:" + err.Error())
+	}
+	if resp.StatusCode == 200 {
+		return data["msg"], nil
+	} else {
+		return data["err"], errors.New("err")
+	}
 }
 
 // 停止抓包并获取pcap文件
@@ -112,15 +124,65 @@ func (p *packet) StopPacket(cont *gin.Context, clusterName, url string) error {
 		cont.Header("Content-Transfer-Encoding", "binary")
 		cont.Header("Content-Length", fmt.Sprintf("%d", resp.ContentLength))
 
-		// 将管道中的数据写入响应体
+		//将管道中的数据写入响应体
 		n, err := io.Copy(cont.Writer, resp.Body)
 		fmt.Println("写入字节：", n)
 		if err != nil {
 			fmt.Println("写入流失败：" + err.Error())
 			return errors.New("写入流失败：" + err.Error())
 		}
+		return nil
 	} else {
-		return errors.New("关闭抓包程序失败，请检查抓包程序")
+		return errors.New("停止抓包失败")
 	}
-	return nil
+}
+
+// 获取网卡列表
+func (p *packet) GetAllInterface(cont *gin.Context, clusterName, url string) (interface{}, error) {
+	//根据集群名获取IP
+	clu, err := dao.RegCluster.GetClusterIP(clusterName)
+	if err != nil {
+		fmt.Println(err.Error())
+		return nil, err
+	}
+
+	urls := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/interfaces?url=" + url
+	req, err := http.NewRequest("POST", urls, nil) //后端需要用ShouldBindJSON来接收参数
+	if err != nil {
+		fmt.Println("创建 HTTP 请求报错：" + err.Error())
+		return nil, errors.New("创建 HTTP 请求报错：" + err.Error())
+	}
+	fmt.Println("发送：", req)
+
+	// 发送 HTTP 请求
+	var resp *http.Response
+	// 创建 HTTP 客户端
+	client := &http.Client{}
+	resp, err = client.Do(req)
+	if err != nil {
+		fmt.Println("发送 HTTP 请求报错：" + err.Error())
+		return nil, errors.New("发送 HTTP 请求报错：" + err.Error())
+	}
+	defer resp.Body.Close()
+
+	// 读取响应的 body 内容
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		logger.Error("读取响应 body 时出错:" + err.Error())
+		return "", errors.New("读取响应 body 时出错:" + err.Error())
+	}
+	// 解析 body 内容为 JSON 格式
+	var data map[string]interface{}
+	//解码到data中
+	err = json.Unmarshal(body, &data)
+	if err != nil {
+		logger.Error("解析 JSON 数据时出错:" + err.Error())
+		return "", errors.New("解析 JSON 数据时出错:" + err.Error())
+	}
+
+	if resp.StatusCode == 200 {
+		return data, nil
+	} else {
+		return data["err"], errors.New("err")
+	}
 }
