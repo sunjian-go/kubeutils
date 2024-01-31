@@ -68,6 +68,7 @@ func (p *packet) GetAllInterface(c *gin.Context) {
 				"err": err.Error(),
 			})
 		}
+		return
 	}
 	c.JSON(200, interfaces)
 

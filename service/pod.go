@@ -5,6 +5,7 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
+	"github.com/wonderivan/logger"
 	"io/ioutil"
 	"main/dao"
 	"net/http"
@@ -32,7 +33,7 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 	// 将结构体编码为 JSON
 	podData, err := json.Marshal(podinfo)
 	if err != nil {
-		fmt.Println("编码结构体为 JSON 时出错：" + err.Error())
+		logger.Error("编码结构体为 JSON 时出错：" + err.Error())
 		return "", errors.New("编码结构体为 JSON 时出错：" + err.Error())
 	}
 	// 创建一个包含 JSON 数据的 io.Reader
@@ -42,7 +43,7 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return nil, err
 	}
 
@@ -58,7 +59,7 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 	}
 	req, err := http.NewRequest("GET", urls, jsonReader) //后端需要用ShouldBindJSON来接收参数
 	if err != nil {
-		fmt.Println("创建 HTTP 请求报错：" + err.Error())
+		logger.Error("创建 HTTP 请求报错：" + err.Error())
 		return "", errors.New("创建 HTTP 请求报错：" + err.Error())
 	}
 
@@ -73,8 +74,8 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 	client := &http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {
-		fmt.Println("发送 HTTP 请求报错：" + err.Error())
-		return "", errors.New("发送 HTTP 请求报错：" + err.Error())
+		logger.Error("发送 HTTP 请求报错：" + err.Error())
+		return "", errors.New("发送 HTTP 请求报错，请检查后端agent服务是否正常运行")
 	}
 	defer resp.Body.Close()
 
@@ -83,7 +84,7 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 		// 读取响应的 body 内容
 		body, err := ioutil.ReadAll(resp.Body)
 		if err != nil {
-			fmt.Println("读取响应 body 时出错:" + err.Error())
+			logger.Error("读取响应 body 时出错:" + err.Error())
 			return "", errors.New("读取响应 body 时出错:" + err.Error())
 		}
 		// 解析 body 内容为 JSON 格式
@@ -91,13 +92,13 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 		//解码到data中
 		err = json.Unmarshal(body, &data)
 		if err != nil {
-			fmt.Println("解析 JSON 数据时出错:" + err.Error())
+			logger.Error("解析 JSON 数据时出错:" + err.Error())
 			return "", errors.New("解析 JSON 数据时出错:" + err.Error())
 		}
 		//fmt.Println("获取到data: ", data)
 		return data, nil
 	} else {
-		fmt.Println("获取数据失败。。。")
+		logger.Error("获取数据失败。。。")
 		return "", errors.New("获取数据失败。。。")
 	}
 }

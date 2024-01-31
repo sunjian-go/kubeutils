@@ -24,7 +24,7 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 	//首先验证码校验
 	err := Auth.CountResult(adminuser.Formula, adminuser.Result)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return "", nil, err
 	}
 	//校验账密
@@ -56,13 +56,13 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 	// 使用加密因子进行签名，并获取最终的Token字符串
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
-		fmt.Println("生成Token失败:", err)
+		logger.Error("生成Token失败:", err)
 		return "", nil, errors.New("生成Token失败: " + err.Error())
 	}
 	fmt.Println("生成的Token:", tokenString)
 	kubeconf, err := Conf.ReadConfFunc()
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return "", nil, errors.New("获取配置文件失败: " + err.Error())
 	}
 	return tokenString, kubeconf, nil

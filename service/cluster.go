@@ -3,6 +3,7 @@ package service
 import (
 	"fmt"
 	"github.com/robfig/cron"
+	"github.com/wonderivan/logger"
 	"main/dao"
 	"main/model"
 	"time"
@@ -18,7 +19,7 @@ func (c *cluss) RegisterFunc(cluster *model.Cluster) error {
 	//先查询表里是否存在该集群
 	clu, err := dao.RegCluster.GetClusetrInfo(cluster)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return err
 	}
 	if clu.ClusterName != "" {
@@ -58,7 +59,7 @@ func (c *cluss) CronFunc() {
 		CheckHelth()
 	})
 	if err != nil {
-		fmt.Println(err)
+		logger.Error("定时器执行报错：" + err.Error())
 	}
 	//启动/关闭
 	cronObj.Start()
@@ -72,7 +73,7 @@ func CheckHelth() {
 	//先查出所有agent的数据存入一个结构体切片
 	cls, err := dao.RegCluster.GetAllClusetrInfo()
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 	}
 	//fmt.Println("取出数据为：", cls)
 	for _, data := range cls {
@@ -83,10 +84,10 @@ func CheckHelth() {
 		//如果集群更新时间戳与当前时间戳相差大于120秒，则代表该集群失联（agent每120秒发一次心跳）
 		if currentDate.Unix()-data.UpdatedAt.Unix() > 120 {
 			//失联的集群将该集群状态置为inactive
-			fmt.Println(data.ClusterName + "已失联。。。")
+			logger.Info(data.ClusterName + "已失联。。。")
 			err := dao.RegCluster.UpdateClusterStatus(data.ClusterName, "inactive")
 			if err != nil {
-				fmt.Println(err.Error())
+				logger.Error(err.Error())
 			}
 		}
 	}
@@ -103,7 +104,7 @@ func (c *cluss) GetAllClusters(clu *ClusterInfo) ([]model.Cluster, int, error) {
 	//clus, err := dao.RegCluster.GetAllClusetrInfo()
 	clus, total, err := dao.RegCluster.GetAllClusetr(clu.FilterName, clu.Page, clu.Limit)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return nil, 0, err
 	}
 	return clus, total, nil
@@ -113,13 +114,13 @@ func (c *cluss) GetAllClusters(clu *ClusterInfo) ([]model.Cluster, int, error) {
 func (c *cluss) DeleteCluster(name string) error {
 	err := dao.RegCluster.DeleteCluster(name)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return err
 	}
 	//删除本集群上传记录
 	err = dao.Uploadhist.DeleteAllFilesInfo(name)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return err
 	}
 	return nil

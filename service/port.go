@@ -25,7 +25,7 @@ func (p *portt) TCPTelnet(portdata *PortData, clusterName, url string) (interfac
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return nil, err
 	}
 
@@ -53,7 +53,7 @@ func (p *portt) TCPTelnet(portdata *PortData, clusterName, url string) (interfac
 	resp, err = client.Do(req)
 	if err != nil {
 		logger.Error("发送 HTTP 请求报错：" + err.Error())
-		return "", errors.New("发送 HTTP 请求报错：" + err.Error())
+		return "", errors.New("发送 HTTP 请求报错，请检查后端agent服务是否正常运行") //代表后端agent挂了或者连不上了
 	}
 	defer resp.Body.Close()
 

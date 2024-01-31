@@ -22,6 +22,7 @@ func (r *router) RouterInit(router *gin.Engine) {
 		GET("/api/corev1/getnamespaces", Namespace.GetNamespaces).
 		GET("/api/corev1/getpods", Pod.GetPods).
 		GET("/api/corev1/getnodes", Node.GetNodes).
+		GET("/api/corev1/getnodedetail", Node.GetNodeDetail).
 		GET("/api/corev1/getcontainers", Pod.GetContainer).
 		GET("/api/listPath", Listpath.ListContainerPath).
 		POST("/api/download", File.DownLoadFile).
@@ -29,6 +30,7 @@ func (r *router) RouterInit(router *gin.Engine) {
 		GET("/api/importfile", Imfile.ImportFile).
 		POST("/api/startPacket", Pack.StartPacket).
 		POST("/api/stopPacket", Pack.StopPacket).
+		GET("/api/interfaces", Pack.GetAllInterface).
 		POST("/api/icmp", Icmp.PingFunc).
 		POST("/api/port", Port.PortTel).
 		GET("/api/nodes", Node.GetNodes).

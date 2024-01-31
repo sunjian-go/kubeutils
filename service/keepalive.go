@@ -2,7 +2,7 @@ package service
 
 import (
 	"errors"
-	"fmt"
+	"github.com/wonderivan/logger"
 	"main/dao"
 	"main/model"
 )
@@ -19,7 +19,7 @@ func (k *keepalive) UpdateStatus(name, status string) error {
 	clu.ClusterName = name
 	clus, err := dao.RegCluster.GetClusetrInfo(clu)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return err
 	}
 	if clus.ClusterName == "" {
@@ -29,7 +29,7 @@ func (k *keepalive) UpdateStatus(name, status string) error {
 	//如果集群没被删除就继续更新状态
 	err = dao.RegCluster.UpdateClusterStatus(name, status)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return err
 	}
 	return nil

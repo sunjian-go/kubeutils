@@ -8,6 +8,7 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
+	"github.com/wonderivan/logger"
 	"io"
 	"main/dao"
 	"main/model"
@@ -56,19 +57,19 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 		// 打开文件
 		srcFile, err := file.Open()
 		if err != nil {
-			fmt.Println("打开文件失败：", err.Error())
+			logger.Error("打开文件失败：", err.Error())
 		}
 		defer srcFile.Close()
 
 		// 创建multipart表单字段
 		part, err := writer.CreateFormFile("file", file.Filename)
 		if err != nil {
-			fmt.Println("创建multipart表单字段失败：", err.Error())
+			logger.Error("创建multipart表单字段失败：", err.Error())
 		}
 
 		// 将文件内容复制到multipart表单字段中
 		if _, err := io.Copy(part, srcFile); err != nil {
-			fmt.Println("将文件内容复制到multipart表单字段中报错：", err.Error())
+			logger.Error("将文件内容复制到multipart表单字段中报错：", err.Error())
 		}
 	}
 	fmt.Println("上传pod: ", podinfo.PodName)
@@ -97,7 +98,7 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 	//开始插入表数据
 	err := dao.Uploadhist.UploadData(uploadData)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 	}
 
 	// 添加其他文本字段（如果有的话）
@@ -116,7 +117,7 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(podinfo.ClusterName)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 	}
 
 	fmt.Println("ip= ", clu.Ipaddr)
@@ -127,7 +128,7 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 	// 创建HTTP请求
 	req, err := http.NewRequest("POST", fullURL, &buf)
 	if err != nil {
-		fmt.Println("创建HTTP请求失败：", err.Error())
+		logger.Error("创建HTTP请求失败：", err.Error())
 	}
 
 	// 设置请求头，指定Content-Type为multipart/form-data
@@ -137,14 +138,14 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		fmt.Println("发送HTTP请求失败：", err.Error())
+		logger.Error("发送HTTP请求失败：", err.Error())
 	}
 	defer resp.Body.Close()
 
 	//到这一步就说明上传成功了，修改状态即可
 	err = dao.Uploadhist.UpdateUploadDataStatus(md5str, "success")
 	if err != nil {
-		fmt.Println("更新文件上传状态失败：", err.Error())
+		logger.Error("更新文件上传状态失败：", err.Error())
 	}
 	return nil
 }
@@ -171,13 +172,13 @@ func (f *file) CopyFromPod(podinfo *QueryStr, cont *gin.Context, clusterName str
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 	}
 
 	// 将结构体编码为 JSON
 	podData, err := json.Marshal(podinfo)
 	if err != nil {
-		fmt.Println("编码结构体为 JSON 时出错：" + err.Error())
+		logger.Error("编码结构体为 JSON 时出错：" + err.Error())
 		return errors.New("编码结构体为 JSON 时出错：" + err.Error())
 	}
 
@@ -187,7 +188,7 @@ func (f *file) CopyFromPod(podinfo *QueryStr, cont *gin.Context, clusterName str
 	urls := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/download"
 	req, err := http.NewRequest("POST", urls, jsonReader) //后端需要用ShouldBindJSON来接收参数
 	if err != nil {
-		fmt.Println("创建 HTTP 请求报错：" + err.Error())
+		logger.Error("创建 HTTP 请求报错：" + err.Error())
 		return errors.New("创建 HTTP 请求报错：" + err.Error())
 	}
 	fmt.Println("发送：", req)
@@ -198,8 +199,8 @@ func (f *file) CopyFromPod(podinfo *QueryStr, cont *gin.Context, clusterName str
 	client := &http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {
-		fmt.Println("发送 HTTP 请求报错：" + err.Error())
-		return errors.New("发送 HTTP 请求报错：" + err.Error())
+		logger.Error("发送 HTTP 请求报错：" + err.Error())
+		return errors.New("发送 HTTP 请求报错，请检查后端agent服务是否正常运行")
 	}
 	defer resp.Body.Close()
 
@@ -219,7 +220,7 @@ func (f *file) CopyFromPod(podinfo *QueryStr, cont *gin.Context, clusterName str
 		n, err := io.Copy(cont.Writer, resp.Body)
 		fmt.Println("写入字节：", n)
 		if err != nil {
-			fmt.Println("写入流失败：" + err.Error())
+			logger.Error("写入流失败：" + err.Error())
 			return errors.New("写入流失败：" + err.Error())
 		}
 	}
@@ -237,7 +238,7 @@ type UploadInfo struct {
 func (f *file) GetUploadHistory(uploadinfo *UploadInfo) ([]model.Upload_History, int, error) {
 	uploadh, total, err := dao.Uploadhist.GetUploadHistory(uploadinfo.CLusterName, uploadinfo.FilterName, uploadinfo.Page, uploadinfo.Limit)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return nil, 0, err
 	}
 	return uploadh, total, nil

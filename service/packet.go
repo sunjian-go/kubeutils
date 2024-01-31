@@ -29,7 +29,7 @@ func (p *packet) StartPacket(pcakinfo *PackInfo, clusterName, url string) (inter
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return nil, err
 	}
 
@@ -44,7 +44,7 @@ func (p *packet) StartPacket(pcakinfo *PackInfo, clusterName, url string) (inter
 	urls := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/startPacket?url=" + url //去往agent
 	req, err := http.NewRequest("POST", urls, jsonReader)                           //后端需要用ShouldBindJSON来接收参数
 	if err != nil {
-		fmt.Println("创建 HTTP 请求报错：" + err.Error())
+		logger.Error("创建 HTTP 请求报错：" + err.Error())
 		return nil, errors.New("创建 HTTP 请求报错：" + err.Error())
 	}
 
@@ -56,8 +56,8 @@ func (p *packet) StartPacket(pcakinfo *PackInfo, clusterName, url string) (inter
 	client := &http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {
-		fmt.Println("发送 HTTP 请求报错：" + err.Error())
-		return nil, errors.New("发送 HTTP 请求报错：" + err.Error())
+		logger.Error("发送 HTTP 请求报错：" + err.Error())
+		return nil, errors.New("发送 HTTP 请求报错，请检查后端agent服务是否正常运行")
 	}
 	defer resp.Body.Close()
 
@@ -89,14 +89,14 @@ func (p *packet) StopPacket(cont *gin.Context, clusterName, url string) error {
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return err
 	}
 
 	urls := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/stopPacket?url=" + url
 	req, err := http.NewRequest("POST", urls, nil) //后端需要用ShouldBindJSON来接收参数
 	if err != nil {
-		fmt.Println("创建 HTTP 请求报错：" + err.Error())
+		logger.Error("创建 HTTP 请求报错：" + err.Error())
 		return errors.New("创建 HTTP 请求报错：" + err.Error())
 	}
 	fmt.Println("发送：", req)
@@ -107,13 +107,12 @@ func (p *packet) StopPacket(cont *gin.Context, clusterName, url string) error {
 	client := &http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {
-		fmt.Println("发送 HTTP 请求报错：" + err.Error())
-		return errors.New("发送 HTTP 请求报错：" + err.Error())
+		logger.Error("发送 HTTP 请求报错：" + err.Error())
+		return errors.New("发送 HTTP 请求报错，请检查后端agent服务是否正常运行")
 	}
 	defer resp.Body.Close()
 
 	fmt.Println("状态信息：", resp.Status)
-	fmt.Println("长度为: ", resp.ContentLength)
 	DisStr := strings.Split(resp.Header.Values("Content-Disposition")[0], "=")
 	pcapname := strings.ReplaceAll(DisStr[1], "\"", "")
 
@@ -123,12 +122,11 @@ func (p *packet) StopPacket(cont *gin.Context, clusterName, url string) error {
 		cont.Header("Content-Disposition", fmt.Sprintf("attachment; filename=\"%s\"", pcapname))
 		cont.Header("Content-Transfer-Encoding", "binary")
 		cont.Header("Content-Length", fmt.Sprintf("%d", resp.ContentLength))
-
 		//将管道中的数据写入响应体
 		n, err := io.Copy(cont.Writer, resp.Body)
 		fmt.Println("写入字节：", n)
 		if err != nil {
-			fmt.Println("写入流失败：" + err.Error())
+			logger.Error("写入流失败：" + err.Error())
 			return errors.New("写入流失败：" + err.Error())
 		}
 		return nil
@@ -142,14 +140,14 @@ func (p *packet) GetAllInterface(cont *gin.Context, clusterName, url string) (in
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		fmt.Println(err.Error())
+		logger.Error(err.Error())
 		return nil, err
 	}
 
 	urls := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/interfaces?url=" + url
-	req, err := http.NewRequest("POST", urls, nil) //后端需要用ShouldBindJSON来接收参数
+	req, err := http.NewRequest("GET", urls, nil) //后端需要用ShouldBindJSON来接收参数
 	if err != nil {
-		fmt.Println("创建 HTTP 请求报错：" + err.Error())
+		logger.Error("创建 HTTP 请求报错：" + err.Error())
 		return nil, errors.New("创建 HTTP 请求报错：" + err.Error())
 	}
 	fmt.Println("发送：", req)
@@ -158,10 +156,11 @@ func (p *packet) GetAllInterface(cont *gin.Context, clusterName, url string) (in
 	var resp *http.Response
 	// 创建 HTTP 客户端
 	client := &http.Client{}
+	//client.Timeout = 10
 	resp, err = client.Do(req)
 	if err != nil {
-		fmt.Println("发送 HTTP 请求报错：" + err.Error())
-		return nil, errors.New("发送 HTTP 请求报错：" + err.Error())
+		logger.Error("发送 HTTP 请求报错：" + err.Error())
+		return nil, errors.New("发送 HTTP 请求报错，请检查后端agent服务是否正常运行")
 	}
 	defer resp.Body.Close()
 
@@ -171,6 +170,7 @@ func (p *packet) GetAllInterface(cont *gin.Context, clusterName, url string) (in
 		logger.Error("读取响应 body 时出错:" + err.Error())
 		return "", errors.New("读取响应 body 时出错:" + err.Error())
 	}
+
 	// 解析 body 内容为 JSON 格式
 	var data map[string]interface{}
 	//解码到data中
