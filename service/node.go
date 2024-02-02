@@ -6,7 +6,6 @@ import (
 	"fmt"
 	"github.com/wonderivan/logger"
 	"io"
-	"io/ioutil"
 	"main/dao"
 	"net/http"
 )
@@ -115,7 +114,7 @@ func (n *node) GetNodeDetail(token, clusterName, nodeName string) (interface{}, 
 	fmt.Println("状态信息：", resp.Status)
 
 	// 读取响应的 body 内容
-	body, err := ioutil.ReadAll(resp.Body)
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
 		logger.Error("读取响应 body 时出错:" + err.Error())
 		return "", errors.New("读取响应 body 时出错:" + err.Error())

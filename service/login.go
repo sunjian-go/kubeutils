@@ -49,7 +49,7 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	// 设置Token的Claim(声明)，这是您自定义的数据
 	claims := token.Claims.(jwt.MapClaims)
-	claims["exp"] = time.Now().Add(time.Minute * 30).Unix() // 设置Token过期时间（2小时）
+	claims["exp"] = time.Now().Add(time.Hour * 1).Unix() // 设置Token过期时间（1小时）
 	claims["user_id"] = "1234567"
 	claims["username"] = adminuser.Username
 
