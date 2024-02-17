@@ -29,9 +29,15 @@ func (l *listpath) ListContainerPath(c *gin.Context) {
 
 	out, err := service.Listpath.ListContainerPath(podinfo, token, clusterName)
 	if err != nil {
-		c.JSON(400, gin.H{
-			"err": err.Error(),
-		})
+		if err.Error() == "err" {
+			c.JSON(400, gin.H{
+				"err": out,
+			})
+		} else {
+			c.JSON(400, gin.H{
+				"err": err.Error(),
+			})
+		}
 		return
 	}
 	c.JSON(200, gin.H{

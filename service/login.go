@@ -32,6 +32,7 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 	if err != nil {
 		return "", nil, err
 	}
+	fmt.Println("xxxxx", gconf["AdminPasswd"])
 	if adminuser.Username != "" && adminuser.Password != "" {
 		if adminuser.Username != gconf["AdminUser"] || adminuser.Password != gconf["AdminPasswd"] {
 			logger.Error("账号或密码错误，请重试")
@@ -49,7 +50,7 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 	token := jwt.New(jwt.SigningMethodHS256)
 	// 设置Token的Claim(声明)，这是您自定义的数据
 	claims := token.Claims.(jwt.MapClaims)
-	claims["exp"] = time.Now().Add(time.Hour * 1).Unix() // 设置Token过期时间（1小时）
+	claims["exp"] = time.Now().Add(time.Minute * 40).Unix() // 设置Token过期时间（40分钟）
 	claims["user_id"] = "1234567"
 	claims["username"] = adminuser.Username
 

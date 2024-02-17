@@ -32,9 +32,15 @@ func (p *pod) GetPods(c *gin.Context) {
 
 	data, err := service.Pod.GetObjs(token, clusterName, "getpods", pod)
 	if err != nil {
-		c.JSON(400, gin.H{
-			"err": err.Error(),
-		})
+		if err.Error() == "err" {
+			c.JSON(400, gin.H{
+				"err": data,
+			})
+		} else {
+			c.JSON(400, gin.H{
+				"err": err.Error(),
+			})
+		}
 		return
 	}
 	c.JSON(200, data)
@@ -58,10 +64,15 @@ func (p *pod) GetContainer(c *gin.Context) {
 
 	containers, err := service.Pod.GetObjs(token, clusterName, "getContainer", pod)
 	if err != nil {
-		c.JSON(400, gin.H{
-			"err":  "获取容器信息失败" + err.Error(),
-			"data": nil,
-		})
+		if err.Error() == "err" {
+			c.JSON(400, gin.H{
+				"err": containers,
+			})
+		} else {
+			c.JSON(400, gin.H{
+				"err": err.Error(),
+			})
+		}
 		return
 	}
 	c.JSON(200, gin.H{

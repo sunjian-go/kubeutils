@@ -6,9 +6,8 @@ import (
 	"errors"
 	"fmt"
 	"github.com/wonderivan/logger"
-	"io/ioutil"
 	"main/dao"
-	"net/http"
+	"main/utils"
 )
 
 var Pod pod
@@ -57,48 +56,24 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 		urls = "http://" + clu.Ipaddr + ":" + clu.Port + "/api/corev1/getcontainers"
 		break
 	}
-	req, err := http.NewRequest("GET", urls, jsonReader) //后端需要用ShouldBindJSON来接收参数
+
+	body, code, err := utils.Http.HttpSend(urls, jsonReader, "GET")
 	if err != nil {
-		logger.Error("创建 HTTP 请求报错：" + err.Error())
-		return "", errors.New("创建 HTTP 请求报错：" + err.Error())
+		return nil, err
 	}
 
-	// 在请求头中添加Authorization头，携带Token
-	req.Header.Set("Authorization", token)
-	// 设置请求头的 Content-Type 为 application/json
-	req.Header.Set("Content-Type", "application/json")
-	fmt.Println("发送：", req)
-	// 发送 HTTP 请求
-	var resp *http.Response
-	// 创建 HTTP 客户端
-	client := &http.Client{}
-	resp, err = client.Do(req)
+	// 解析 body 内容为 JSON 格式
+	var data map[string]interface{}
+	//解码到data中
+	err = json.Unmarshal(body, &data)
 	if err != nil {
-		logger.Error("发送 HTTP 请求报错：" + err.Error())
-		return "", errors.New("发送 HTTP 请求报错，请检查后端agent服务是否正常运行")
+		logger.Error("解析 JSON 数据时出错:" + err.Error())
+		return "", errors.New("解析 JSON 数据时出错:" + err.Error())
 	}
-	defer resp.Body.Close()
 
-	fmt.Println("状态信息：", resp.Status)
-	if resp.Status == "200 OK" {
-		// 读取响应的 body 内容
-		body, err := ioutil.ReadAll(resp.Body)
-		if err != nil {
-			logger.Error("读取响应 body 时出错:" + err.Error())
-			return "", errors.New("读取响应 body 时出错:" + err.Error())
-		}
-		// 解析 body 内容为 JSON 格式
-		var data map[string]interface{}
-		//解码到data中
-		err = json.Unmarshal(body, &data)
-		if err != nil {
-			logger.Error("解析 JSON 数据时出错:" + err.Error())
-			return "", errors.New("解析 JSON 数据时出错:" + err.Error())
-		}
-		//fmt.Println("获取到data: ", data)
+	if code == 200 {
 		return data, nil
 	} else {
-		logger.Error("获取数据失败。。。")
-		return "", errors.New("获取数据失败。。。")
+		return data["err"], errors.New("err")
 	}
 }

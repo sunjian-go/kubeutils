@@ -21,9 +21,15 @@ func (n *namespace) GetNamespaces(c *gin.Context) {
 	fmt.Println("集群名：", clusterName)
 	data, err := service.Namespace.GetNamespaces(token, clusterName)
 	if err != nil {
-		c.JSON(400, gin.H{
-			"err": err.Error(),
-		})
+		if err.Error() == "err" {
+			c.JSON(400, gin.H{
+				"err": data,
+			})
+		} else {
+			c.JSON(400, gin.H{
+				"err": err.Error(),
+			})
+		}
 		return
 	}
 	c.JSON(200, data)
