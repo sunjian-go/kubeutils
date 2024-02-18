@@ -2,9 +2,8 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/wonderivan/logger"
+	"main/utils"
 	"time"
 	//"google.golang.org/genproto/googleapis/ads/googleads/v3/errors"
 )
@@ -24,7 +23,7 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 	//首先验证码校验
 	err := Auth.CountResult(adminuser.Formula, adminuser.Result)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return "", nil, err
 	}
 	//校验账密
@@ -32,14 +31,14 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 	if err != nil {
 		return "", nil, err
 	}
-	fmt.Println("xxxxx", gconf["AdminPasswd"])
+
 	if adminuser.Username != "" && adminuser.Password != "" {
 		if adminuser.Username != gconf["AdminUser"] || adminuser.Password != gconf["AdminPasswd"] {
-			logger.Error("账号或密码错误，请重试")
+			utils.Logg.Error("账号或密码错误，请重试")
 			return "", nil, errors.New("账号或密码错误，请重试")
 		}
 	} else {
-		logger.Error("账号或密码不能为空")
+		utils.Logg.Error("账号或密码不能为空")
 		return "", nil, errors.New("账号或密码不能为空")
 	}
 
@@ -57,13 +56,13 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 	// 使用加密因子进行签名，并获取最终的Token字符串
 	tokenString, err := token.SignedString([]byte(secret))
 	if err != nil {
-		logger.Error("生成Token失败:", err)
+		utils.Logg.Error("生成Token失败: " + err.Error())
 		return "", nil, errors.New("生成Token失败: " + err.Error())
 	}
-	fmt.Println("生成的Token:", tokenString)
+	utils.Logg.Info("生成的Token: " + tokenString)
 	kubeconf, err := Conf.ReadConfFunc()
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return "", nil, errors.New("获取配置文件失败: " + err.Error())
 	}
 	return tokenString, kubeconf, nil

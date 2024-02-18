@@ -1,6 +1,7 @@
 package controller
 
 import (
+	"fmt"
 	"github.com/gin-gonic/gin"
 	"main/service"
 )
@@ -11,6 +12,7 @@ type portt struct {
 }
 
 func (p *portt) PortTel(c *gin.Context) {
+	fmt.Println("开始端口测试")
 	url := c.Query("url")
 	clusterName := c.Query("clusterName")
 	portdata := new(service.PortData)

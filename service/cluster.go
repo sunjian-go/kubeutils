@@ -3,9 +3,9 @@ package service
 import (
 	"fmt"
 	"github.com/robfig/cron"
-	"github.com/wonderivan/logger"
 	"main/dao"
 	"main/model"
+	"main/utils"
 	"time"
 )
 
@@ -19,12 +19,12 @@ func (c *cluss) RegisterFunc(cluster *model.Cluster) error {
 	//先查询表里是否存在该集群
 	clu, err := dao.RegCluster.GetClusetrInfo(cluster)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return err
 	}
 	if clu.ClusterName != "" {
 		if cluster.Ipaddr != clu.Ipaddr {
-			fmt.Println("该集群信息已变更")
+			utils.Logg.Info("该集群信息已变更")
 			//代表表中集群ip变了,就去更新ip即可
 			err := dao.RegCluster.UpdateClusterInfo("ip", cluster)
 			if err != nil {
@@ -39,7 +39,7 @@ func (c *cluss) RegisterFunc(cluster *model.Cluster) error {
 			}
 		}
 	} else {
-		fmt.Println("该集群信息不存在,去创建")
+		utils.Logg.Info("该集群信息不存在,去创建")
 		//代表表里没有该集群，泽去创建
 		err := dao.RegCluster.Register(cluster)
 		if err != nil {
@@ -59,7 +59,7 @@ func (c *cluss) CronFunc() {
 		CheckHelth()
 	})
 	if err != nil {
-		logger.Error("定时器执行报错：" + err.Error())
+		utils.Logg.Error("定时器执行报错：" + err.Error())
 	}
 	//启动/关闭
 	cronObj.Start()
@@ -73,7 +73,7 @@ func CheckHelth() {
 	//先查出所有agent的数据存入一个结构体切片
 	cls, err := dao.RegCluster.GetAllClusetrInfo()
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 	}
 	//fmt.Println("取出数据为：", cls)
 	for _, data := range cls {
@@ -84,10 +84,10 @@ func CheckHelth() {
 		//如果集群更新时间戳与当前时间戳相差大于120秒，则代表该集群失联（agent每120秒发一次心跳）
 		if currentDate.Unix()-data.UpdatedAt.Unix() > 120 {
 			//失联的集群将该集群状态置为inactive
-			logger.Info(data.ClusterName + "已失联。。。")
+			utils.Logg.Info(data.ClusterName + "已失联。。。")
 			err := dao.RegCluster.UpdateClusterStatus(data.ClusterName, "inactive")
 			if err != nil {
-				logger.Error(err.Error())
+				utils.Logg.Error(err.Error())
 			}
 		}
 	}
@@ -104,7 +104,7 @@ func (c *cluss) GetAllClusters(clu *ClusterInfo) ([]model.Cluster, int, error) {
 	//clus, err := dao.RegCluster.GetAllClusetrInfo()
 	clus, total, err := dao.RegCluster.GetAllClusetr(clu.FilterName, clu.Page, clu.Limit)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return nil, 0, err
 	}
 	return clus, total, nil
@@ -114,13 +114,13 @@ func (c *cluss) GetAllClusters(clu *ClusterInfo) ([]model.Cluster, int, error) {
 func (c *cluss) DeleteCluster(name string) error {
 	err := dao.RegCluster.DeleteCluster(name)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return err
 	}
 	//删除本集群上传记录
 	err = dao.Uploadhist.DeleteAllFilesInfo(name)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return err
 	}
 	return nil

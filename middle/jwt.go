@@ -34,9 +34,9 @@ func JWTAuth() gin.HandlerFunc {
 			//如果不是登录路由就需要进行token验证
 			//1.获取Header中的Authorization
 			Token = c.Request.Header.Get("Authorization")
-			fmt.Println("获取到token为：", Token)
+			utils.Logg.Info("获取到token为：" + Token)
 			if Token == "" {
-				fmt.Println("请求未携带token，无权限访问")
+				utils.Logg.Info("请求未携带token，无权限访问")
 				c.JSON(400, gin.H{
 					"msg":  "请求未携带token，无权限访问",
 					"data": nil,

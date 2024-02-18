@@ -3,7 +3,6 @@ package utils
 import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
-	"github.com/wonderivan/logger"
 )
 
 var JWTToken jwtToken
@@ -29,7 +28,7 @@ func (*jwtToken) ParseToken(tokenString string) (claims *CustomClaims, err error
 		return []byte(SECRET), nil
 	})
 	if err != nil {
-		logger.Error("parse token failed ", err)
+		Logg.Error("parse token failed " + err.Error())
 		//处理token解析后的各种错误
 		if ve, ok := err.(*jwt.ValidationError); ok {
 			if ve.Errors&jwt.ValidationErrorMalformed != 0 {

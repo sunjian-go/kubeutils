@@ -2,7 +2,6 @@ package service
 
 import (
 	"errors"
-	"fmt"
 	"math/rand"
 	"strconv"
 	"strings"
@@ -24,8 +23,7 @@ func (a *auth) GetAuthCode() string {
 	opt := []string{"+", "-", "*"}
 	index := rand.Intn(3)
 	formula := strconv.Itoa(num1) + opt[index] + strconv.Itoa(num2) + "=?"
-
-	fmt.Println("随机公式：", formula)
+	//fmt.Println("随机公式：", formula)
 	return formula
 }
 
@@ -33,7 +31,7 @@ func (a *auth) GetAuthCode() string {
 func (a *auth) CountResult(formula, res string) error {
 	newformula := strings.Split(formula, "=")
 	newFormula := strings.Split(newformula[0], "")
-	fmt.Println("公式：", newFormula[0], newFormula[1], newFormula[2])
+	//fmt.Println("公式：", newFormula[0], newFormula[1], newFormula[2])
 	var result int
 	num1, _ := strconv.Atoi(newFormula[0])
 	num2, _ := strconv.Atoi(newFormula[2])
@@ -45,7 +43,7 @@ func (a *auth) CountResult(formula, res string) error {
 	case "*":
 		result = num1 * num2
 	}
-	fmt.Println("结果：", result)
+	//fmt.Println("结果：", result)
 
 	if strconv.Itoa(result) != res {
 		return errors.New("验证不通过")

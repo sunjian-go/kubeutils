@@ -3,7 +3,6 @@ package service
 import (
 	"encoding/json"
 	"errors"
-	"github.com/wonderivan/logger"
 	"main/dao"
 	"main/utils"
 )
@@ -24,7 +23,7 @@ func (n *node) GetNodes(token, clusterName string, nodeinfo *NodeInfo) (interfac
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return "", err
 	}
 
@@ -39,14 +38,13 @@ func (n *node) GetNodes(token, clusterName string, nodeinfo *NodeInfo) (interfac
 	//解码到data中
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		logger.Error("解析 JSON 数据时出错:" + err.Error())
+		utils.Logg.Error("解析 JSON 数据时出错:" + err.Error())
 		return "", errors.New("解析 JSON 数据时出错:" + err.Error())
 	}
 
 	if code == 200 {
 		return data, nil
 	} else {
-		logger.Error(data["err"])
 		return data["err"], errors.New("err")
 	}
 }
@@ -56,7 +54,7 @@ func (n *node) GetNodeDetail(token, clusterName, nodeName string) (interface{}, 
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return "", err
 	}
 
@@ -71,14 +69,13 @@ func (n *node) GetNodeDetail(token, clusterName, nodeName string) (interface{}, 
 	//解码到data中
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		logger.Error("解析 JSON 数据时出错:" + err.Error())
+		utils.Logg.Error("解析 JSON 数据时出错:" + err.Error())
 		return "", errors.New("解析 JSON 数据时出错:" + err.Error())
 	}
 
 	if code == 200 {
 		return data, nil
 	} else {
-		logger.Error(data["err"])
 		return data["err"], errors.New("err")
 	}
 }

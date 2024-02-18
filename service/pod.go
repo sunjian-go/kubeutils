@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/wonderivan/logger"
 	"main/dao"
 	"main/utils"
 )
@@ -32,7 +31,7 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 	// 将结构体编码为 JSON
 	podData, err := json.Marshal(podinfo)
 	if err != nil {
-		logger.Error("编码结构体为 JSON 时出错：" + err.Error())
+		utils.Logg.Error("编码结构体为 JSON 时出错：" + err.Error())
 		return "", errors.New("编码结构体为 JSON 时出错：" + err.Error())
 	}
 	// 创建一个包含 JSON 数据的 io.Reader
@@ -42,7 +41,7 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return nil, err
 	}
 
@@ -67,7 +66,7 @@ func (p *pod) GetObjs(token, clusterName, opt string, podinfo interface{}) (inte
 	//解码到data中
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		logger.Error("解析 JSON 数据时出错:" + err.Error())
+		utils.Logg.Error("解析 JSON 数据时出错:" + err.Error())
 		return "", errors.New("解析 JSON 数据时出错:" + err.Error())
 	}
 

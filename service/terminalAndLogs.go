@@ -5,8 +5,8 @@ import (
 	"fmt"
 	"github.com/gin-gonic/gin"
 	"github.com/gorilla/websocket"
-	"github.com/wonderivan/logger"
 	"main/dao"
+	"main/utils"
 	"net/http"
 	"net/url"
 	"os"
@@ -38,7 +38,7 @@ func (t *terminal) WsHandler(namespace, podName, containerName, bashType, cluste
 	// 将HTTP 请求升级为 WebSocket 连接
 	serverWsConn, err := upgrader.Upgrade(c.Writer, c.Request, nil)
 	if err != nil {
-		logger.Error("升级为 WebSocket 连接失败：" + err.Error())
+		utils.Logg.Error("升级为 WebSocket 连接失败：" + err.Error())
 		return err
 	}
 
@@ -49,22 +49,22 @@ func (t *terminal) WsHandler(namespace, podName, containerName, bashType, cluste
 
 	//将server套接字写入通道，为了使agent端可以使用server端套接字
 	connFromSrv <- serverWsConn
-	fmt.Println("serverWsConn已写入")
+	utils.Logg.Info("serverWsConn已写入")
 
 	//应该主程序结束时关闭的
 	defer func() {
-		fmt.Println("WsHandler方法结束")
+		utils.Logg.Info("WsHandler方法结束")
 		serverWsConn.Close()
 	}()
 
 	//先去检测agent端ws是否连接成功
 	if !<-exitConn {
-		logger.Error("agent端ws请求失败")
+		utils.Logg.Error("agent端ws请求失败")
 		return errors.New("agent端ws请求失败")
 	}
 	//获取agent套接字
 	agentConn := <-connFromAgent
-	fmt.Println("agentConn已读取")
+	utils.Logg.Info("agentConn已读取")
 
 	// 设置连接关闭的回调函数
 	serverWsConn.SetCloseHandler(func(code int, text string) error {
@@ -73,21 +73,21 @@ func (t *terminal) WsHandler(namespace, podName, containerName, bashType, cluste
 		return nil
 	})
 
-	fmt.Println("ws已连接。。。")
+	utils.Logg.Info("ws已连接。。。")
 
 	for {
-		fmt.Println("开始读取消息")
+		//utils.Logg.Info("开始读取消息")
 		// 读取客户端消息
 		_, p, err := serverWsConn.ReadMessage()
 		if err != nil {
-			logger.Error(err.Error())
+			utils.Logg.Error(err.Error())
 			return err
 		}
 
 		// 发送消息给agent端
 		err = agentConn.WriteMessage(websocket.TextMessage, p)
 		if err != nil {
-			logger.Error("发送消息给agent端报错: " + err.Error())
+			utils.Logg.Error("发送消息给agent端报错: " + err.Error())
 			return err
 		}
 	}
@@ -97,9 +97,9 @@ func (t *terminal) WsHandler(namespace, podName, containerName, bashType, cluste
 func (t *terminal) ConAgentws(namespace, podname, containerName, bash, clusterName string) {
 	//首先获取server的套接字,用于下面给前端发消息
 	srvConn := <-connFromSrv
-	fmt.Println("srvConn已读取")
+	utils.Logg.Info("srvConn已读取")
 
-	fmt.Println("连接angent")
+	utils.Logg.Info("连接angent")
 	// 创建一个用于接收系统中断信号的通道
 	interrupt := make(chan os.Signal, 1)
 	// 注册系统中断信号处理函数
@@ -108,7 +108,7 @@ func (t *terminal) ConAgentws(namespace, podname, containerName, bash, clusterNa
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 	}
 
 	// 定义agent端的 URL
@@ -122,7 +122,7 @@ func (t *terminal) ConAgentws(namespace, podname, containerName, bash, clusterNa
 		agentUrl, err = url.Parse("ws://" + clu.Ipaddr + ":" + clu.Port + "/api/corev1/getlog")
 	}
 	if err != nil {
-		logger.Error("无法解析后端 URL: %v", err)
+		utils.Logg.Error("无法解析后端 URL: " + err.Error())
 	}
 	// 设置查询参数
 	query := url.Values{}
@@ -139,15 +139,15 @@ func (t *terminal) ConAgentws(namespace, podname, containerName, bash, clusterNa
 	agentUrl.RawQuery = query.Encode()
 
 	// 使用默认的 Dialer 发起 WebSocket 连接
-	logger.Info("发起agent WebSocket 连接")
+	utils.Logg.Info("发起agent WebSocket 连接")
 	agentWsConn, _, err := websocket.DefaultDialer.Dial(agentUrl.String(), nil)
 	if err != nil {
-		logger.Error("发起 WebSocket 连接失败:", err.Error())
+		utils.Logg.Error("发起 WebSocket 连接失败: " + err.Error())
 		exitConn <- false
 		return
 	}
 	defer func() {
-		fmt.Println("ConAgentws方法关退出")
+		utils.Logg.Info("ConAgentws方法关退出")
 		agentWsConn.Close()
 	}()
 	//到这一步说明已经连接上agent的ws了
@@ -155,9 +155,9 @@ func (t *terminal) ConAgentws(namespace, podname, containerName, bash, clusterNa
 
 	//将angent套接字写入通道，为了让server端可以使用agent套接字
 	connFromAgent <- agentWsConn
-	fmt.Println("agentWsConn已写入")
+	utils.Logg.Info("agentWsConn已写入")
 	defer func() {
-		fmt.Println("ConAgentws方法结束")
+		utils.Logg.Info("ConAgentws方法结束")
 	}()
 
 	// 创建一个完成信号的通道
@@ -168,15 +168,14 @@ func (t *terminal) ConAgentws(namespace, podname, containerName, bash, clusterNa
 			//一直读取agent端发过来的数据
 			readNum, message, err := agentWsConn.ReadMessage()
 			if err != nil {
-				logger.Error("读取agent端数据失败: " + err.Error())
+				utils.Logg.Error("读取agent端数据失败: " + err.Error())
 				return
 			}
-			//log.Printf("读取到agent数据: %s", message)
 
 			//当读取到agent端的数据之后写入前端
 			err = srvConn.WriteMessage(readNum, message)
 			if err != nil {
-				logger.Error("写入前端数据报错：" + err.Error())
+				utils.Logg.Error("写入前端数据报错：" + err.Error())
 			}
 		}
 	}()
@@ -184,14 +183,14 @@ func (t *terminal) ConAgentws(namespace, podname, containerName, bash, clusterNa
 	for {
 		select {
 		case <-done:
-			fmt.Println("agent ws关闭。。。")
+			utils.Logg.Info("agent ws关闭。。。")
 			return
 		case <-interrupt:
-			fmt.Println("终端信号")
+			utils.Logg.Info("终端信号")
 			// 关闭连接
 			err := agentWsConn.WriteMessage(websocket.CloseMessage, websocket.FormatCloseMessage(websocket.CloseNormalClosure, ""))
 			if err != nil {
-				logger.Error("写入关闭消息失败:" + err.Error())
+				utils.Logg.Error("写入关闭消息失败:" + err.Error())
 				return
 			}
 			select {

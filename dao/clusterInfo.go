@@ -5,6 +5,8 @@ import (
 	"fmt"
 	"main/db"
 	"main/model"
+	"main/utils"
+	"strconv"
 )
 
 var RegCluster reqcluster
@@ -45,7 +47,7 @@ func (r *reqcluster) GetAllClusetr(fiterName string, page, limit int) ([]model.C
 	if tx.Error != nil && tx.Error.Error() != "record not found" {
 		return nil, 0, errors.New("查询所有集群失败，" + tx.Error.Error())
 	}
-	fmt.Println("total= ", len(clusters))
+	utils.Logg.Info("total= " + strconv.Itoa(len(clusters)))
 	total := len(clusters)
 	clusters = nil
 	tx = db.GORM.Model(clusters).Where("cluster_name like ?", "%"+fiterName+"%").
@@ -91,7 +93,7 @@ func (r *reqcluster) UpdateClusterInfo(opt string, cluster *model.Cluster) error
 
 // 更新集群活跃信息
 func (r *reqcluster) UpdateClusterStatus(name, status string) error {
-	fmt.Println("将" + name + "状态改为：" + status)
+	utils.Logg.Info("将" + name + "状态改为：" + status)
 	clu := &model.Cluster{}
 	tx := db.GORM.Model(clu).Where("cluster_name = ?", name).Update(model.Cluster{Status: status})
 	if tx.Error != nil {

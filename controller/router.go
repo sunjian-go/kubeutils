@@ -27,7 +27,6 @@ func (r *router) RouterInit(router *gin.Engine) {
 		GET("/api/listPath", Listpath.ListContainerPath).
 		POST("/api/download", File.DownLoadFile).
 		GET("/api/uploadHistory", File.GetUploadHistory).
-		GET("/api/importfile", Imfile.ImportFile).
 		POST("/api/startPacket", Pack.StartPacket).
 		POST("/api/stopPacket", Pack.StopPacket).
 		GET("/api/interfaces", Pack.GetAllInterface).

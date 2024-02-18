@@ -7,10 +7,16 @@ import (
 	"main/db"
 	"main/middle"
 	"main/service"
+	"main/utils"
 )
 
 func main() {
-
+	//初始话日志打印
+	err := utils.Log.LogInit()
+	if err != nil {
+		fmt.Println(err.Error())
+		return
+	}
 	//获取配置文件中的mysql地址
 	gconf, err := service.Conf.ReadConfFunc()
 	if err != nil {

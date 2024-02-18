@@ -5,7 +5,6 @@ import (
 	"encoding/json"
 	"errors"
 	"fmt"
-	"github.com/wonderivan/logger"
 	"main/dao"
 	"main/utils"
 )
@@ -23,11 +22,11 @@ type PodPath struct {
 }
 
 func (l *listpath) ListContainerPath(podinfo *PodPath, token, clusterName string) (interface{}, error) {
-	fmt.Println("podinfo:", podinfo)
+	fmt.Println("podinfo: ", podinfo)
 	// 将结构体编码为 JSON
 	podData, err := json.Marshal(podinfo)
 	if err != nil {
-		logger.Error("编码结构体为 JSON 时出错：" + err.Error())
+		utils.Logg.Error("编码结构体为 JSON 时出错：" + err.Error())
 		return "", errors.New("编码结构体为 JSON 时出错：" + err.Error())
 	}
 	// 创建一个包含 JSON 数据的 io.Reader
@@ -37,7 +36,7 @@ func (l *listpath) ListContainerPath(podinfo *PodPath, token, clusterName string
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 	}
 	urls := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/listPath"
 
@@ -51,7 +50,7 @@ func (l *listpath) ListContainerPath(podinfo *PodPath, token, clusterName string
 	//解码到data中
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		logger.Error("解析 JSON 数据时出错:" + err.Error())
+		utils.Logg.Error("解析 JSON 数据时出错:" + err.Error())
 		return "", errors.New("解析 JSON 数据时出错:" + err.Error())
 	}
 

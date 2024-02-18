@@ -5,7 +5,6 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/wonderivan/logger"
 	"io"
 	"main/dao"
 	"main/utils"
@@ -29,7 +28,7 @@ func (p *packet) StartPacket(pcakinfo *PackInfo, clusterName, url string) (inter
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return nil, err
 	}
 
@@ -37,7 +36,7 @@ func (p *packet) StartPacket(pcakinfo *PackInfo, clusterName, url string) (inter
 	//将结构体转为json格式
 	jsonReader, err := utils.Stj.StructToJson(pcakinfo)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return nil, err
 	}
 	//创建http请求
@@ -52,7 +51,7 @@ func (p *packet) StartPacket(pcakinfo *PackInfo, clusterName, url string) (inter
 	//解码到data中
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		logger.Error("解析 JSON 数据时出错:" + err.Error())
+		utils.Logg.Error("解析 JSON 数据时出错:" + err.Error())
 		return nil, errors.New("解析 JSON 数据时出错:" + err.Error())
 	}
 	if code == 200 {
@@ -67,7 +66,7 @@ func (p *packet) StopPacket(cont *gin.Context, clusterName, url string) error {
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return err
 	}
 
@@ -75,10 +74,10 @@ func (p *packet) StopPacket(cont *gin.Context, clusterName, url string) error {
 
 	req, err := http.NewRequest("POST", urls, nil) //后端需要用ShouldBindJSON来接收参数
 	if err != nil {
-		logger.Error("创建 HTTP 请求报错：" + err.Error())
+		utils.Logg.Error("创建 HTTP 请求报错：" + err.Error())
 		return errors.New("创建 HTTP 请求报错：" + err.Error())
 	}
-	fmt.Println("发送：", req)
+	//fmt.Println("发送：", req)
 
 	// 发送 HTTP 请求
 	var resp *http.Response
@@ -86,12 +85,12 @@ func (p *packet) StopPacket(cont *gin.Context, clusterName, url string) error {
 	client := &http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {
-		logger.Error("发送 HTTP 请求报错：" + err.Error())
+		utils.Logg.Error("发送 HTTP 请求报错：" + err.Error())
 		return errors.New("发送 HTTP 请求报错，请检查后端agent服务是否正常运行")
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("状态信息：", resp.Status)
+	//fmt.Println("状态信息：", resp.Status)
 	DisStr := strings.Split(resp.Header.Values("Content-Disposition")[0], "=")
 	pcapname := strings.ReplaceAll(DisStr[1], "\"", "")
 
@@ -105,7 +104,7 @@ func (p *packet) StopPacket(cont *gin.Context, clusterName, url string) error {
 		n, err := io.Copy(cont.Writer, resp.Body)
 		fmt.Println("写入字节：", n)
 		if err != nil {
-			logger.Error("写入流失败：" + err.Error())
+			utils.Logg.Error("写入流失败：" + err.Error())
 			return errors.New("写入流失败：" + err.Error())
 		}
 		return nil
@@ -119,7 +118,7 @@ func (p *packet) GetAllInterface(cont *gin.Context, clusterName, url string) (in
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return nil, err
 	}
 
@@ -134,7 +133,7 @@ func (p *packet) GetAllInterface(cont *gin.Context, clusterName, url string) (in
 	//解码到data中
 	err = json.Unmarshal(body, &data)
 	if err != nil {
-		logger.Error("解析 JSON 数据时出错:" + err.Error())
+		utils.Logg.Error("解析 JSON 数据时出错:" + err.Error())
 		return "", errors.New("解析 JSON 数据时出错:" + err.Error())
 	}
 

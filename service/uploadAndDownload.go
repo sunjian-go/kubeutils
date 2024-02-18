@@ -8,10 +8,10 @@ import (
 	"errors"
 	"fmt"
 	"github.com/gin-gonic/gin"
-	"github.com/wonderivan/logger"
 	"io"
 	"main/dao"
 	"main/model"
+	"main/utils"
 	"mime/multipart"
 	"net/http"
 	"net/url"
@@ -52,30 +52,27 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 	uploadData := new(model.Upload_History)
 	for _, file := range files {
 		//将城市对应的用户对应的文件存入表中
-		fmt.Println("文件名：", file.Filename)
+		utils.Logg.Info("文件名：" + file.Filename)
 		uploadData.File = file.Filename
 		// 打开文件
 		srcFile, err := file.Open()
 		if err != nil {
-			logger.Error("打开文件失败：", err.Error())
+			utils.Logg.Error("打开文件失败：" + err.Error())
 		}
 		defer srcFile.Close()
 
 		// 创建multipart表单字段
 		part, err := writer.CreateFormFile("file", file.Filename)
 		if err != nil {
-			logger.Error("创建multipart表单字段失败：", err.Error())
+			utils.Logg.Error("创建multipart表单字段失败：" + err.Error())
 		}
 
 		// 将文件内容复制到multipart表单字段中
 		if _, err := io.Copy(part, srcFile); err != nil {
-			logger.Error("将文件内容复制到multipart表单字段中报错：", err.Error())
+			utils.Logg.Error("将文件内容复制到multipart表单字段中报错：" + err.Error())
 		}
 	}
-	fmt.Println("上传pod: ", podinfo.PodName)
-	fmt.Println("namespace：", podinfo.Namespace)
-	fmt.Println("上传路径：", podinfo.Path)
-	fmt.Println("集群名：", podinfo.ClusterName)
+	utils.Logg.Info("上传pod: " + podinfo.PodName + ", " + "namespace：" + podinfo.Namespace + ", " + "上传路径：" + podinfo.Path + ", " + "集群名：" + podinfo.ClusterName)
 
 	//根据时间戳和文件名生成md5值
 	// 获取当前时间
@@ -98,7 +95,7 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 	//开始插入表数据
 	err := dao.Uploadhist.UploadData(uploadData)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 	}
 
 	// 添加其他文本字段（如果有的话）
@@ -117,10 +114,10 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(podinfo.ClusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 	}
 
-	fmt.Println("ip= ", clu.Ipaddr)
+	utils.Logg.Info("ip= " + clu.Ipaddr)
 	// 构建 URL
 	baseURL := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/upload"
 	fullURL := baseURL + "?" + params.Encode()
@@ -128,7 +125,7 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 	// 创建HTTP请求
 	req, err := http.NewRequest("POST", fullURL, &buf)
 	if err != nil {
-		logger.Error("创建HTTP请求失败：", err.Error())
+		utils.Logg.Error("创建HTTP请求失败：" + err.Error())
 	}
 
 	// 设置请求头，指定Content-Type为multipart/form-data
@@ -138,14 +135,14 @@ func (f *file) CopyToPod(files []*multipart.FileHeader, podinfo *QueryStr) error
 	client := &http.Client{}
 	resp, err := client.Do(req)
 	if err != nil {
-		logger.Error("发送HTTP请求失败：", err.Error())
+		utils.Logg.Error("发送HTTP请求失败：" + err.Error())
 	}
 	defer resp.Body.Close()
 
 	//到这一步就说明上传成功了，修改状态即可
 	err = dao.Uploadhist.UpdateUploadDataStatus(md5str, "success")
 	if err != nil {
-		logger.Error("更新文件上传状态失败：", err.Error())
+		utils.Logg.Error("更新文件上传状态失败：" + err.Error())
 	}
 	return nil
 }
@@ -172,13 +169,13 @@ func (f *file) CopyFromPod(podinfo *QueryStr, cont *gin.Context, clusterName str
 	//根据集群名获取IP
 	clu, err := dao.RegCluster.GetClusterIP(clusterName)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 	}
 
 	// 将结构体编码为 JSON
 	podData, err := json.Marshal(podinfo)
 	if err != nil {
-		logger.Error("编码结构体为 JSON 时出错：" + err.Error())
+		utils.Logg.Error("编码结构体为 JSON 时出错：" + err.Error())
 		return errors.New("编码结构体为 JSON 时出错：" + err.Error())
 	}
 
@@ -188,10 +185,10 @@ func (f *file) CopyFromPod(podinfo *QueryStr, cont *gin.Context, clusterName str
 	urls := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/download"
 	req, err := http.NewRequest("POST", urls, jsonReader) //后端需要用ShouldBindJSON来接收参数
 	if err != nil {
-		logger.Error("创建 HTTP 请求报错：" + err.Error())
+		utils.Logg.Error("创建 HTTP 请求报错：" + err.Error())
 		return errors.New("创建 HTTP 请求报错：" + err.Error())
 	}
-	fmt.Println("发送：", req)
+	utils.Logg.Info("发送：" + req.Host)
 
 	// 发送 HTTP 请求
 	// 创建 HTTP 客户端
@@ -199,12 +196,12 @@ func (f *file) CopyFromPod(podinfo *QueryStr, cont *gin.Context, clusterName str
 	client := &http.Client{}
 	resp, err = client.Do(req)
 	if err != nil {
-		logger.Error("发送 HTTP 请求报错：" + err.Error())
+		utils.Logg.Error("发送 HTTP 请求报错：" + err.Error())
 		return errors.New("发送 HTTP 请求报错，请检查后端agent服务是否正常运行")
 	}
 	defer resp.Body.Close()
 
-	fmt.Println("状态信息：", resp.Status)
+	//fmt.Println("状态信息：", resp.Status)
 	if resp.Status == "200 OK" {
 		//设置响应头，告诉浏览器这是一个要下载的文件
 		respFilename := ""
@@ -220,7 +217,7 @@ func (f *file) CopyFromPod(podinfo *QueryStr, cont *gin.Context, clusterName str
 		n, err := io.Copy(cont.Writer, resp.Body)
 		fmt.Println("写入字节：", n)
 		if err != nil {
-			logger.Error("写入流失败：" + err.Error())
+			utils.Logg.Error("写入流失败：" + err.Error())
 			return errors.New("写入流失败：" + err.Error())
 		}
 	}
@@ -238,7 +235,7 @@ type UploadInfo struct {
 func (f *file) GetUploadHistory(uploadinfo *UploadInfo) ([]model.Upload_History, int, error) {
 	uploadh, total, err := dao.Uploadhist.GetUploadHistory(uploadinfo.CLusterName, uploadinfo.FilterName, uploadinfo.Page, uploadinfo.Limit)
 	if err != nil {
-		logger.Error(err.Error())
+		utils.Logg.Error(err.Error())
 		return nil, 0, err
 	}
 	return uploadh, total, nil
