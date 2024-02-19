@@ -50,6 +50,7 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 	// 设置Token的Claim(声明)，这是您自定义的数据
 	claims := token.Claims.(jwt.MapClaims)
 	claims["exp"] = time.Now().Add(time.Minute * 40).Unix() // 设置Token过期时间（40分钟）
+	//claims["exp"] = time.Now().Add(time.Second * 5).Unix()
 	claims["user_id"] = "1234567"
 	claims["username"] = adminuser.Username
 
