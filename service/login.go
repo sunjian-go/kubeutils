@@ -3,6 +3,7 @@ package service
 import (
 	"errors"
 	"github.com/dgrijalva/jwt-go"
+	"main/dao"
 	"main/utils"
 	"time"
 	//"google.golang.org/genproto/googleapis/ads/googleads/v3/errors"
@@ -32,11 +33,26 @@ func (l *login) Login(adminuser *User) (string, map[string]string, error) {
 		return "", nil, err
 	}
 
+	//获取用户信息
+	user, err := dao.User.GetUser(adminuser.Username)
+	if err != nil {
+		utils.Logg.Error(err.Error())
+		return "", nil, err
+	}
+
 	if adminuser.Username != "" && adminuser.Password != "" {
-		if adminuser.Username != gconf["AdminUser"] || adminuser.Password != gconf["AdminPasswd"] {
-			utils.Logg.Error("账号或密码错误，请重试")
-			return "", nil, errors.New("账号或密码错误，请重试")
+		if adminuser.Username == "admin" {
+			if adminuser.Username != gconf["AdminUser"] || adminuser.Password != gconf["AdminPasswd"] {
+				utils.Logg.Error("账号或密码错误，请重试")
+				return "", nil, errors.New("账号或密码错误，请重试")
+			}
+		} else {
+			if adminuser.Username != user.Username || adminuser.Password != user.Password {
+				utils.Logg.Error("账号或密码错误，请重试")
+				return "", nil, errors.New("账号或密码错误，请重试")
+			}
 		}
+
 	} else {
 		utils.Logg.Error("账号或密码不能为空")
 		return "", nil, errors.New("账号或密码不能为空")

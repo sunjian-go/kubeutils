@@ -21,6 +21,7 @@ type PackInfo struct {
 	Ip      string `json:"ip"`
 	Port    string `json:"port"`
 	NetName string `json:"netName"`
+	TimeOut string `json:"timeOut"`
 }
 
 // 开始抓包
@@ -69,7 +70,6 @@ func (p *packet) StopPacket(cont *gin.Context, clusterName, url string) error {
 		utils.Logg.Error(err.Error())
 		return err
 	}
-
 	urls := "http://" + clu.Ipaddr + ":" + clu.Port + "/api/stopPacket?url=" + url
 
 	req, err := http.NewRequest("POST", urls, nil) //后端需要用ShouldBindJSON来接收参数

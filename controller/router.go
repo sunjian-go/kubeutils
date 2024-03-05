@@ -32,6 +32,24 @@ func (r *router) RouterInit(router *gin.Engine) {
 		GET("/api/interfaces", Pack.GetAllInterface).
 		POST("/api/icmp", Icmp.PingFunc).
 		POST("/api/port", Port.PortTel).
+		//角色
+		GET("/api/getrole", Role.GetRoles).
+		GET("/api/getonerole", Role.GetRole).
+		POST("/api/addrole", Role.AddRole).
+		PUT("/api/updaterole", Role.UpdateRoleAuth).
+		DELETE("/api/deleterole", Role.DeleteRole).
+		//用户组
+		GET("/api/getgroup", Group.Getgroups).
+		GET("/api/getonegroup", Group.Getgroup).
+		POST("/api/addgroup", Group.Addgroup).
+		PUT("/api/updategroup", Group.UpdategroupAuth).
+		DELETE("/api/deletegroup", Group.Deletegroup).
+		//用户
+		GET("/api/getuser", Users.GetUsers).
+		GET("/api/getoneuser", Users.GetUser).
+		POST("/api/adduser", Users.AddUser).
+		PUT("/api/updateuser", Users.UpdateUser).
+		DELETE("/api/deleteuser", Users.DeleteUser).
 		//ws获取日志
 		GET("/api/ws", Pod.WsFunc)
 }

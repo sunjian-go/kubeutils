@@ -39,14 +39,6 @@ func main() {
 		service.ClusTers.CronFunc()
 	}()
 
-	//启动websocket
-	//go func() {
-	//	http.HandleFunc("/ws", service.Terminal.WsHandler)
-	//	http.ListenAndServe(":8083", nil)
-	//	fmt.Println("ws服务已启动。。。")
-	//}()
-
-	//_, _ = service.Imfile.ImportFile()
 	router.Run("0.0.0.0:8999")
 	//关闭GORM
 	defer db.Close()

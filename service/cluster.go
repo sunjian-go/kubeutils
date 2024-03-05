@@ -54,8 +54,8 @@ var cronObj *cron.Cron
 // 定时器
 func (c *cluss) CronFunc() {
 	cronObj = cron.New()
-	err := cronObj.AddFunc("*/120 * * * * *", func() {
-		//每120秒执行一次检查集群健康状态
+	err := cronObj.AddFunc("*/60 * * * * *", func() {
+		//每60秒执行一次检查集群健康状态
 		CheckHelth()
 	})
 	if err != nil {
@@ -81,8 +81,8 @@ func CheckHelth() {
 		currentDate := time.Now()
 		fmt.Println("打印数据：", data.ClusterName, data.UpdatedAt.Unix())
 		fmt.Println("当前时间戳：", currentDate.Unix())
-		//如果集群更新时间戳与当前时间戳相差大于120秒，则代表该集群失联（agent每120秒发一次心跳）
-		if currentDate.Unix()-data.UpdatedAt.Unix() > 120 {
+		//如果集群更新时间戳与当前时间戳相差大于60秒，则代表该集群失联（agent每60秒发一次心跳）
+		if currentDate.Unix()-data.UpdatedAt.Unix() > 60 {
 			//失联的集群将该集群状态置为inactive
 			utils.Logg.Info(data.ClusterName + "已失联。。。")
 			err := dao.RegCluster.UpdateClusterStatus(data.ClusterName, "inactive")

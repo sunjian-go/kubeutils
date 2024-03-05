@@ -47,6 +47,9 @@ func InitMysql(gconf map[string]string) {
 	//建表
 	GORM.AutoMigrate(&model.Cluster{})        //集群表
 	GORM.AutoMigrate(&model.Upload_History{}) //上传文件历史表
+	GORM.AutoMigrate(&model.Role{})           //角色表
+	GORM.AutoMigrate(&model.Group{})          //用户组表
+	GORM.AutoMigrate(&model.User{})           //用户表
 
 }
 
